@@ -85,7 +85,20 @@ export default function App() {
      if(data.length<2){setImportError("The file has no data rows. Include a header row and at least one record.");return;}
      const headers=data[0].map(v=>String(v??"").trim());
      const normalized=(h:string)=>h.toLowerCase().replace(/[^a-z0-9]/g,"");
-     const fieldAliases:Record<string,string[]>={customerId:["customerid","customer","customeraccount"],customerName:["customername","customerdescription"],partNumber:["partnumber","partno","material","materialnumber"],orderNumber:["ordernumber","order","salesorder"],invoiceNumber:["invoicenumber","invoice","billingdocument"],invoiceLineId:["invoicelineid","lineid","item"],transactionDate:["transactiondate","date","documentdate"],quantity:["quantity","qty","invoicedquantity"],expectedQuantity:["expectedquantity","orderquantity","referencequantity"],unit:["unit","uom","unitofmeasure"],sourceDocumentRef:["sourcedocumentref","documentreference","reference"],sapReference:["sapreference","sapmaterial","sapdocument"],customerName:["customername","customerdescription"]};
+     const fieldAliases: Record<string, string[]> = {
+  customerId: ["customerid", "customer", "customeraccount"],
+  customerName: ["customername", "customerdescription"],
+  partNumber: ["partnumber", "partno", "material", "materialnumber"],
+  orderNumber: ["ordernumber", "order", "salesorder"],
+  invoiceNumber: ["invoicenumber", "invoice", "billingdocument"],
+  invoiceLineId: ["invoicelineid", "lineid", "item"],
+  transactionDate: ["transactiondate", "date", "documentdate"],
+  quantity: ["quantity", "qty", "invoicedquantity"],
+  expectedQuantity: ["expectedquantity", "orderquantity", "referencequantity"],
+  unit: ["unit", "uom", "unitofmeasure"],
+  sourceDocumentRef: ["sourcedocumentref", "documentreference", "reference"],
+  sapReference: ["sapreference", "sapmaterial", "sapdocument"]
+};
      const guess:Record<string,string>={}; Object.entries(fieldAliases).forEach(([field,aliases])=>{const ix=headers.findIndex(h=>aliases.includes(normalized(h)));if(ix>=0)guess[field]=headers[ix];});
      setMap(guess);
      const parsed=data.slice(1).map((line,i)=>{
@@ -183,7 +196,7 @@ function Dashboard({rows,counts,lastRun,onKpi,onPage,onDownload,onRun}:{rows:Tra
  <section className="panel"><div className="panelhead"><div><h2>Priority review queue</h2><p>Cases that need human attention before export</p></div><button className="btn small" onClick={()=>onPage("records")}>Open queue <ChevronRight size={13}/></button></div><RecordTable rows={rows.filter(r=>["Suspected Duplicate","Quantity Mismatch","Missing Data","Customer/Part Mismatch","Unit Mismatch","Needs Review"].includes(r.status)).slice(0,6)} onSelect={r=>onPage("records")}/></section></>;
 }
 function CopyIcon({size=16}:{size?:number}) {return <ClipboardCheck size={size}/>}
-function ImportPage({role,rows,name,error,summary,mapping,fileRef,onFile,onSample,onTemplate,onImport}:{role:Role;rows:Partial<Transaction>[];name:string;error:string;summary:string;mapping:Record<string,string>;fileRef:React.RefObject<HTMLInputElement|null>;onFile:(f?:File)=>void;onSample:()=>void;onTemplate:()=>void;onImport:()=>void}) {
+function ImportPage({role,rows,name,error,summary,mapping,fileRef,onFile,onSample,onTemplate,onImport}:{role:Role;rows:Partial<Transaction>[];name:string;error:string;summary:string;mapping:Record<string,string>;fileRef: React.RefObject<HTMLInputElement>;onFile:(f?:File)=>void;onSample:()=>void;onTemplate:()=>void;onImport:()=>void}) {
  const fields=[["customerId","Customer ID"],["customerName","Customer Name"],["partNumber","Part Number"],["orderNumber","Order Number"],["invoiceNumber","Invoice Number"],["invoiceLineId","Invoice Line ID"],["transactionDate","Transaction Date"],["quantity","Quantity"],["expectedQuantity","Expected Quantity"],["unit","Unit"],["sourceDocumentRef","Source Document Ref"],["sapReference","SAP Reference"]];
  return <><section className="panel"><div className="panelhead"><div><h2>1. Select source file</h2><p>CSV and XLSX supported. Parsing occurs locally in your browser.</p></div><FileSpreadsheet size={18} color="#4c70b6"/></div><div className="panelbody"><div className="toolbar"><button className="btn primary" disabled={!canImport(role)} onClick={()=>fileRef.current?.click()}><Upload size={15}/> Choose CSV / XLSX</button><input ref={fileRef} type="file" accept=".csv,.xlsx" style={{display:"none"}} onChange={e=>onFile(e.target.files?.[0])}/><button className="btn" onClick={onSample}><Download size={14}/> Download sample data</button><button className="btn" onClick={onTemplate}><Download size={14}/> Download blank template</button></div>{name&&<p style={{fontSize:12,marginTop:14}}>Selected: <strong>{name}</strong></p>}{summary&&<div className="callout" style={{marginTop:12}}><Check size={14} style={{display:"inline",verticalAlign:"middle",marginRight:6}}/>{summary}</div>}{error&&<div className="callout" style={{marginTop:12,background:"#fff0f0",borderColor:"#f4caca",color:"#a52525"}}>{error}</div>}{!canImport(role)&&<p className="muted">Your selected role is not allowed to import in this demo.</p>}</div></section>
  <section className="panel"><div className="panelhead"><div><h2>2. Column mapping</h2><p>Auto-detected by common header aliases. Missing fields remain blank and are flagged.</p></div><span className="status neutral">{Object.keys(mapping).length} mapped</span></div><div className="panelbody"><div className="fieldgrid">{fields.map(([key,label])=><div className="field" key={key}><label>{label}</label><div style={{padding:"10px",background:"#f7f8fa",borderRadius:7,fontSize:12,color:mapping[key]?"#344158":"#a22"}}>{mapping[key]||"Not mapped — will validate as missing"}</div></div>)}</div></div></section>
