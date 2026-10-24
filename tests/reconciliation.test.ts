@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import { classifyRow, reconcileRows } from "../lib/reconcile";
+import { seedTransactions } from "../lib/demo-data";
+const base = {customerId:"C-123",customerName:"Test (Fictional)",partNumber:"000001",orderNumber:"ORD-1",invoiceNumber:"INV-1",invoiceLineId:"1",transactionDate:"2026-10-01",quantity:"2",expectedQuantity:"2",unit:"EA",sourceDocumentRef:"DOC-1",sapReference:"MAT-1"};
+assert.equal(classifyRow(base).status,"Exact Match","clean row should match");
+assert.equal(classifyRow({...base,quantity:"1"}).status,"Quantity Mismatch","quantity mismatch should be flagged");
+assert.equal(classifyRow({...base,customerId:""}).status,"Missing Data","missing customer should be flagged");
+assert.equal(classifyRow({...base,customerId:"INVALID"}).status,"Customer/Part Mismatch","invalid customer should be flagged");
+assert.equal(classifyRow({...base,quantity:"bad"}).status,"Needs Review","nonnumeric quantity should be held for review");
+assert.equal(classifyRow({...base,unit:"BOX"}).status,"Unit Mismatch","unsupported UOM should be flagged");
+const repeated = [{...base,id:"a"},{...base,id:"b"}].map((r,i)=>({...r,sourceFile:"test.csv",sourceRow:i+2,status:"Exact Match" as const,explanation:"",ruleId:"",severity:"Low" as const}));
+assert.ok(reconcileRows(repeated).every(r=>r.status==="Suspected Duplicate"),"identical composite keys should be duplicate candidates");
+const legitimateRepeat = [{...base,id:"a"},{...base,id:"b",orderNumber:"ORD-2",invoiceNumber:"INV-2"}].map((r,i)=>({...r,sourceFile:"test.csv",sourceRow:i+2,status:"Exact Match" as const,explanation:"",ruleId:"",severity:"Low" as const}));
+assert.ok(reconcileRows(legitimateRepeat).every(r=>r.status==="Exact Match"),"same customer/part with different order and invoice should not be duplicate");
+assert.ok(seedTransactions.length >= 15,"synthetic seed scenarios should be present");
+console.log("PASS: reconciliation rule tests (8 assertions groups)");
